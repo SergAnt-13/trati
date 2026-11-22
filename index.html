@@ -18,13 +18,13 @@ body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 -apple-system,
 .card{background:var(--card);border-radius:18px;padding:16px;margin-bottom:12px}
 .mut{color:var(--mut);font-size:13px}.inc{color:var(--inc)}
 input{width:100%;font:inherit;color:var(--tx);background:transparent;border:1px solid var(--bd);border-radius:12px;padding:11px}
-#amt{font-size:40px;font-weight:600;text-align:center;border:none;padding:6px 0;letter-spacing:-.5px}
+#amt{font-size:34px;font-weight:600;text-align:center;border:none;padding:2px 0;letter-spacing:-.5px}
 .seg{display:flex;background:var(--bd);border-radius:11px;padding:2px;margin-bottom:10px}
 .seg button{flex:1;border:none;background:none;padding:8px 4px;border-radius:9px;font:inherit;font-size:14px;color:var(--mut)}
 .seg button.on{background:var(--card);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.1)}
-.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0}
-.chip{border:1px solid var(--bd);background:none;color:var(--tx);border-radius:14px;padding:9px 2px;font:inherit;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.chip span{display:block;font-size:21px}.chip.on{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 14%,transparent)}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0;max-height:112px;overflow-y:auto}
+.chip{border:1px solid var(--bd);background:none;color:var(--tx);border-radius:14px;padding:6px 2px;font:inherit;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.chip span{display:block;font-size:18px}.chip.on{border-color:var(--ac);background:color-mix(in srgb,var(--ac) 14%,transparent)}
 .main{width:100%;margin-top:10px;background:var(--ac);color:#fff;border:none;border-radius:14px;padding:14px;font:inherit;font-weight:600;font-size:16px}
 .btn{width:100%;text-align:left;background:none;color:var(--tx);border:none;border-top:1px solid var(--bd);padding:13px 2px;font:inherit}
 .btn:first-of-type{border-top:none}.btn small{display:block;color:var(--mut)}
@@ -51,23 +51,32 @@ h3{font-size:13px;font-weight:600;color:var(--mut);margin:0 0 8px;text-transform
 .add{display:flex;gap:6px;margin-top:8px}
 #undo{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:9px 16px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}#undo b{text-decoration:underline}
 #toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none}
+.sug{display:flex;gap:6px;overflow-x:auto;margin-bottom:6px}.sug:empty{display:none}
+.sug button{flex:none;border:1px solid var(--bd);background:none;color:var(--tx);border-radius:16px;padding:6px 12px;font:inherit;font-size:14px;white-space:nowrap}
+details summary{color:var(--mut);font-size:13px;padding:10px 2px 2px;list-style:none}
+.kb .tabs,.kb .sug{display:none!important}.kb .wrap{padding-bottom:8px}
 </style>
 </head>
 <body><div class="wrap">
 <div id="nav" style="display:none"><div class="nav"><button id="prev">‹</button><b id="per"></b><button id="next">›</button></div><div class="seg" id="modes"></div></div>
 
 <section id="t-add">
- <div class="card">
-  <div class="seg" id="types"></div>
-  <input id="amt" inputmode="decimal" placeholder="0" autocomplete="off">
+ <div class="card" style="padding:12px">
+  <div class="seg" id="types" style="margin-bottom:8px"></div>
+  <div id="sug" class="sug"></div>
+  <input id="amt" inputmode="decimal" placeholder="0 ₽" autocomplete="off">
   <div class="chips" id="chips"></div>
-  <input id="note" placeholder="Заметка" autocomplete="off">
-  <input id="dt" type="date" style="margin-top:8px">
   <button class="main" id="add">Записать</button>
+  <details id="more"><summary>Заметка и дата</summary>
+   <input id="note" placeholder="Заметка" autocomplete="off" style="margin-top:8px">
+   <input id="dt" type="date" style="margin-top:8px">
+  </details>
  </div>
+ <div class="card" id="mstrip"></div>
 </section>
 <section id="t-ov" style="display:none"></section>
-<section id="t-hi" style="display:none"><div class="card" id="list"></div></section>
+<section id="t-hi" style="display:none"><input id="q" placeholder="Поиск по заметке и категории" style="margin-bottom:10px"><div class="card" id="list"></div></section>
+<section id="t-du" style="display:none"></section>
 <section id="t-more" style="display:none">
  <div class="card"><h3>Выгрузка</h3>
   <button class="btn" id="csvP">CSV за выбранный период<small id="csvPl"></small></button>
@@ -78,8 +87,13 @@ h3{font-size:13px;font-weight:600;color:var(--mut);margin:0 0 8px;text-transform
  <div class="card"><h3>Резервная копия</h3>
   <button class="btn" id="svJSON">Сохранить резерв (JSON)</button>
   <button class="btn" id="imp">Загрузить резерв</button>
+  <button class="btn" id="impC">Импорт CSV<small>в формате нашей выгрузки</small></button><input type="file" id="fileC" accept=".csv,text/csv" style="display:none">
   <input type="file" id="file" accept=".json" style="display:none">
   <div class="mut" style="margin-top:6px" id="bk"></div><div class="mut">Данные хранятся только на этом телефоне. Делай резерв раз в месяц.</div>
+ </div>
+ <div class="card"><h3>Защита</h3>
+  <button class="btn" id="pinSet">Код-пароль при входе<small id="pinSt"></small></button>
+  <button class="btn" id="pinOff">Убрать код</button>
  </div>
  <div class="card"><h3>Категории</h3>
   <div class="seg" id="ctypes"></div><div id="catList"></div>
